@@ -12,6 +12,14 @@ reconciliation/.ruff_cache/
 # Docker
 pgdata/
 
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
 # IDE
 .idea/
 .vs/
