@@ -9,7 +9,7 @@ CREATE TYPE idempotency_status AS ENUM (
 
 -- 2. Create the idempotency table to store request locks and cached responses
 CREATE TABLE idempotency_keys (
-                                  key UUID PRIMARY KEY,
+                                  key UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                   payload_hash  TEXT NOT NULL,
                                   status        idempotency_status NOT NULL DEFAULT 'IN_FLIGHT',
                                   status_code   SMALLINT,

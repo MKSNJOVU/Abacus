@@ -1,43 +1,60 @@
 services:
-  services:
-    postgres:
-      image: postgres:16
-      environment:
-        POSTGRES_DB: payment_engine
-        POSTGRES_PASSWORD: dev
-      ports:
-        - "5432:5432"
-      volumes:
-        - pgdata:/var/lib/postgresql/data
+  postgres:
+    image: postgres:16-alpine
+    container_name: abacus_postgres
+    environment:
+      POSTGRES_DB: abacus
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d abacus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-    api:
-      build:
-        context: .
-        dockerfile: docker/api.Dockerfile
-      ports:
-        - "3000:3000"
-      environment:
-        DATABASE_URL: postgres://postgres:dev@postgres:5432/payment_engine
-      depends_on:
-        - postgres
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: abacus_api
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://postgres:dev@postgres:5432/abacus
+      RUST_LOG: abacus=debug,info
+    depends_on:
+      postgres:
+        condition: service_healthy
 
-    reconciliation:
-      build:
-        context: .
-        dockerfile: docker/reconciliation.Dockerfile
-      environment:
-        DATABASE_URL: postgres://postgres:dev@postgres:5432/payment_engine
-        API_URL: http://api:3000
-      depends_on:
-        - postgres
-        - api
+  reconciliation:
+    build:
+      context: .
+      dockerfile: docker/reconciliation.Dockerfile
+    container_name: abacus_reconciliation
+    environment:
+      DATABASE_URL: postgres://postgres:dev@postgres:5432/abacus
+      API_URL: http://api:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
 
-    grafana:
-      image: grafana/grafana:latest
-      ports:
-        - "3001:3000"
-      volumes:
-        - ./docker/grafana/dashboard.json:/etc/grafana/provisioning/dashboards/default.json
+  grafana:
+    image: grafana/grafana:latest
+    container_name: abacus_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./docker/grafana/dashboard.json:/etc/grafana/provisioning/dashboards/default.json
+    depends_on:
+      - postgres
 
-  volumes:
-    pgdata:
+volumes:
+  pgdata:

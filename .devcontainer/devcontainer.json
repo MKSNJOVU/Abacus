@@ -1,0 +1,87 @@
+{
+  "name": "ABACUS Engine",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "false"
+    }
+  },
+
+  // Kernel capabilities required by LLDB to debug Rust binaries inside Docker
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined",
+    // Automaticallly load environment variables (like DATABASE_URL) if .env exists
+    "--env-file",
+    "${localWorkspaceFolder}/.env"
+    // TIP: Uncomment the line below if your remote Postgres DB is accessed over a host VPN/Tailscale
+    ,"--network=host"
+  ],
+
+  // Forward ports from the container to your host machine:
+  // 8080: REST API Gateway
+  // 50051: gRPC API Router
+  // 9090: Prometheus Metrics endpoint (Week 3)
+  "forwardPorts": [8080, 50051, 9090],
+  "portsAttributes": {
+    "8080": { "label": "Abacus REST API", "onAutoForward": "notify" },
+    "50051": { "label": "Abacus gRPC Server", "onAutoForward": "silent" },
+    "9090": { "label": "Prometheus Metrics", "onAutoForward": "silent" }
+  },
+
+  // Configure Cursor / VS Code extensions and editor settings inside the container
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Rust Core Engine tools
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates",
+
+        // Python Reconciliation Pipeline tools
+        "ms-python.python",
+        "charliermarsh.ruff",
+
+        // Database & Architecture Diagram tools
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "bierner.markdown-mermaid"
+      ],
+      "settings": {
+        // Format Rust code automatically on save and use Clippy for real-time lints
+        "rust-analyzer.check.command": "clippy",
+        "[rust]": {
+          "editor.defaultFormatter": "rust-lang.rust-analyzer",
+          "editor.formatOnSave": true
+        },
+        // Format Python code automatically on save using Ruff
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        // Point Python to the virtual environment we create in postCreateCommand
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python"
+      }
+    }
+  },
+
+  // Set environment variables inside the container
+  "containerEnv": {
+    "RUST_BACKTRACE": "1",
+    "RUST_LOG": "abacus=debug,info"
+  },
+
+  // Create a local Python virtual environment automatically the first time the container starts
+  "postCreateCommand": "python3 -m venv .venv && echo 'Abacus Dev Container is ready!'",
+
+  // Run as the non-root 'vscode' user so file permissions match your host OS
+  "remoteUser": "vscode"
+}

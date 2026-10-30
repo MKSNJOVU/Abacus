@@ -1,0 +1,59 @@
+# .cursorignore
+
+# ==========================================
+# C# & .NET (ASP.NET Core MVC, WPF)
+# ==========================================
+bin/
+obj/
+.vs/
+TestResults/
+*.user
+*.suo
+
+# ==========================================
+# Rust & Cargo
+# ==========================================
+target/
+**/*.rs.bk
+
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.pyc
+.venv/
+reconciliation/.mypy_cache/
+reconciliation/.ruff_cache/
+
+# ==========================================
+# Databases
+# ==========================================
+# Block local databases but allow the AI to read schema/migration scripts (.sql)
+*.sqlite
+*.sqlite3
+*.db
+*.mdf
+*.ldf
+
+# ==========================================
+# Diagnostics & Large Files
+# ==========================================
+# Prevent the AI from attempting to index massive diagnostic files
+*.dmp
+*.mdmp
+*.log
+
+# ==========================================
+# Secrets & Azure Configurations
+# ==========================================
+# Whitelist templates so AI knows the environment shape, but block actual secrets
+.env
+.env.local
+local.settings.json
+appsettings.json
+appsettings.Development.json
+appsettings.*.local.json
+*.secrets.json
+!*.env.example
+!*.env.template
