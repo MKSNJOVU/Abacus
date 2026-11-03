@@ -1,6 +1,5 @@
 use sha2::{Digest, Sha512};
 use sqlx::*;
-use std::collections::HashMap;
 use std::time::SystemTime;
 use uuid::Uuid;
 
@@ -54,46 +53,50 @@ impl IdempotencyEngine {
         key: IdempotencyKey,
         payload_hash: &str,
     ) -> Result<IdempotencyCheckOutcome, String> {
-        let mut inserted = {
-            let mut map = HashMap::new();
-            map.insert(key.uuid, payload_hash.to_string());
-        };
-        inserted = sqlx::query!(
+        let inserted = sqlx::query(
             r#"INSERT INTO idempotency_keys (key, payload_hash, status, created_at)
        VALUES ($1, $2, 'IN_FLIGHT', NOW()) ON CONFLICT (key) DO NOTHING
        RETURNING key"#,
-            key.uuid,
-            payload_hash
         )
+        .bind(key.uuid)
+        .bind(payload_hash)
         .fetch_optional(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| e.to_string())?;
 
         if inserted.is_some() {
             return Ok(IdempotencyCheckOutcome::Proceed);
         }
 
-        let existing = sqlx::query!(
+        let existing = sqlx::query(
             r#"
 SELECT payload_hash, status AS "status: IdempotencyStatus", status_code, response_body,
        FROM idempotency_keys
        WHERE key = $1"#,
-            key.uuid
         )
+        .bind(key.uuid)
         .fetch_one(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| e.to_string())?;
 
-        if existing.payload_hash != payload_hash {
+        use sqlx::Row;
+        let db_payload_hash: String = existing.try_get("payload_hash").unwrap_or_default();
+
+        if db_payload_hash != payload_hash {
             return Ok(IdempotencyCheckOutcome::PayloadMismatch);
         }
 
-        match existing.status {
-            IdempotencyStatus::InFlight => Ok(IdempotencyCheckOutcome::InFlight),
-            IdempotencyStatus::Completed | IdempotencyStatus::Failed => {
-                Ok(IdempotencyCheckOutcome::CachedResponse {
-                    status_code: existing.status_code.unwrap_or(200) as u16,
-                    body: existing.response_body.unwrap_or_default(),
-                })
-            }
+        let status_str: String = existing.try_get("status").unwrap_or_default();
+        let status_code: Option<i32> = existing.try_get("status_code").ok();
+        let response_body: Option<String> = existing.try_get("response_body").ok();
+
+        match status_str.as_str() {
+            "IN_FLIGHT" => Ok(IdempotencyCheckOutcome::InFlight),
+            "COMPLETED" | "FAILED" => Ok(IdempotencyCheckOutcome::CachedResponse {
+                status_code: status_code.unwrap_or(200) as u16,
+                body: response_body.unwrap_or_default(),
+            }),
+            _ => Err("Unknown status in database".to_string()),
         }
     }
 
@@ -103,7 +106,7 @@ SELECT payload_hash, status AS "status: IdempotencyStatus", status_code, respons
         status_code: u16,
         response_body: &str,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE idempotency_keys
             SET status = 'COMPLETED',
@@ -111,10 +114,10 @@ SELECT payload_hash, status AS "status: IdempotencyStatus", status_code, respons
                 response_body = $3
             WHERE idempotency_key = $1
             "#,
-            key,
-            status_code as i16,
-            response_body
         )
+        .bind(key)
+        .bind(status_code as i16)
+        .bind(response_body)
         .execute(&mut **tx)
         .await?;
 

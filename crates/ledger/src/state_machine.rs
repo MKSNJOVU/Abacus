@@ -2,7 +2,7 @@ use crate::state_machine::PaymentEvent::{Fail, Settle, StartProcessing};
 use crate::state_machine::TransactionState::{Failed, Initiated, Processing, Settled};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TransactionState {
+pub enum TransactionState {
     Initiated,
     Processing,
     Settled,
