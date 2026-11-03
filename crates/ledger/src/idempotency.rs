@@ -43,10 +43,7 @@ impl IdempotencyEngine {
     pub fn hash_payload(payload_bytes: &[u8]) -> String {
         let mut hasher = Sha512::new();
         hasher.update(payload_bytes);
-
-        let hash = hex::encode(hasher.finalize());
-
-        hash
+        hex::encode(hasher.finalize())
     }
     pub async fn check_and_lock_idempotency(
         &self,
