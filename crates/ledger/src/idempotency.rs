@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha512};
 use sqlx::*;
+use std::collections::HashMap;
 use std::time::SystemTime;
 use uuid::Uuid;
 
@@ -53,7 +54,11 @@ impl IdempotencyEngine {
         key: IdempotencyKey,
         payload_hash: &str,
     ) -> Result<IdempotencyCheckOutcome, String> {
-        let inserted = sqlx::query!(
+        let mut inserted = {
+            let mut map = HashMap::new();
+            map.insert(key.uuid, payload_hash.to_string());
+        };
+        inserted = sqlx::query!(
             r#"INSERT INTO idempotency_keys (key, payload_hash, status, created_at)
        VALUES ($1, $2, 'IN_FLIGHT', NOW()) ON CONFLICT (key) DO NOTHING
        RETURNING key"#,
