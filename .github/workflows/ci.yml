@@ -7,18 +7,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      # This will check your code formatting. We must fix the code locally before pushing.
       - run: cargo fmt --check
+      # Clippy acts as a strict linter to catch common Rust mistakes.
       - run: cargo clippy --workspace -- -D warnings
+      # Runs your inline unit tests.
       - run: cargo test --workspace
 
-  python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: cd reconciliation && pip install -e ".[dev]"
-      - run: cd reconciliation && ruff check .
-      - run: cd reconciliation && mypy src/
-      - run: cd reconciliation && pytest -v
+  # TEMPORARILY DISABLED: The Python reconciliation engine is not yet built.
+  # python:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #     - run: cd reconciliation && pip install -e ".[dev]"
+  #     - run: cd reconciliation && ruff check .
+  #     - run: cd reconciliation && mypy src/
+  #     - run: cd reconciliation && pytest -v
