@@ -8,6 +8,7 @@ axum = {version = "^0.8.9"}
 uuid = { version = "1.28.0", features = ["v4"] }
 serde_json = { version = "^1.0.154" }
 sha2 = { version = "^0.11.1" }
+hex = {version = "^0.4.3"}
 
-sqlx = {version = "0.9.0", features = ["runtime-tokio", "postgres"]}
+sqlx = {version = "0.9.0", features = ["runtime-tokio", "postgres", "macros"]}
 serde = {version = "^1.0.229", features = ["derive", "default"]}

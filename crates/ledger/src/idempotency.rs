@@ -1,7 +1,7 @@
 use sqlx::*;
 use std::time::SystemTime;
 use uuid::Uuid;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IdempotencyKey {
@@ -41,9 +41,12 @@ impl IdempotencyEngine {
         Self { pool }
     }
     pub fn hash_payload(payload_bytes: &[u8]) -> String {
-        let mut hasher = Sha256::new();
+        let mut hasher =Sha512::new();
         hasher.update(payload_bytes);
-        format!("{:x}", hasher.finalize())
+
+        let hash = hex::encode(hasher.finalize());
+        
+        hash
     }
     pub async fn check_and_lock_idempotency(
         &self,
