@@ -1,0 +1,23 @@
+name: Rust (legacy)
+
+on:
+  push:
+    branches: [main]
+    paths: ["legacy/rust/**"]
+  pull_request:
+    paths: ["legacy/rust/**"]
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: legacy/rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace -- -D warnings
+      - run: cargo test --workspace

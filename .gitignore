@@ -26,3 +26,9 @@ pgdata/
 
 # Env
 .env
+
+# Csharp
+bin/
+obj/
+*.DotSettings.user
+TestResults/

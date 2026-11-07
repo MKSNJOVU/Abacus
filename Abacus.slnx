@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Abacus.Ledger/Abacus.Ledger.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Abacus.Ledger.Tests/Abacus.Ledger.Tests.csproj" />
+  </Folder>
+</Solution>

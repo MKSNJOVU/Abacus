@@ -1,28 +1,28 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
-  rust:
+  dotnet:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      # This will check your code formatting. We must fix the code locally before pushing.
-      - run: cargo fmt --check
-      # Clippy acts as a strict linter to catch common Rust mistakes.
-      - run: cargo clippy --workspace -- -D warnings
-      # Runs your inline unit tests.
-      - run: cargo test --workspace
 
-  # TEMPORARILY DISABLED: The Python reconciliation engine is not yet built.
-  # python:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.11"
-  #     - run: cd reconciliation && pip install -e ".[dev]"
-  #     - run: cd reconciliation && ruff check .
-  #     - run: cd reconciliation && mypy src/
-  #     - run: cd reconciliation && pytest -v
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore Abacus.slnx
+
+      - name: Check formatting
+        run: dotnet format Abacus.slnx --verify-no-changes --no-restore
+
+      - name: Build (warnings fail the build)
+        run: dotnet build Abacus.slnx --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test Abacus.slnx --no-build
